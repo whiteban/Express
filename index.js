@@ -9,6 +9,39 @@ const port = 3000;
 
 app.use(express.json());
 
+
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      error : 'champs obligatoire manquants'
+    });
+  }
+
+  try { 
+    const user = await prisma.user.findUnique({
+      where: {
+        email
+      }
+  });
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+  if(!await bcrypt.compare(password, user.password)){
+    return res.status(401).json({ error: 'Mot de passe incorrect' });
+  }
+
+  const { password: userPassword, ...userData } = user;
+  res.status(200).json({ message: 'Connexion réussie', user: userData });
+  }
+  catch(error){
+    console.error(error);
+    res.status(500).json({ error: 'Erreur du serveur' });
+  }
+});
+
+
 app.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
 
